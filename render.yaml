@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: hair-color-analyzer-frontend
+    env: static
+    plan: free # Or your desired plan
+    buildCommand: |
+      npm install
+      npm run build
+    staticPublishPath: ./dist
