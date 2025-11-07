@@ -1,203 +1,216 @@
-import React, { useState, useCallback } from "react";
-import axios from "axios";
-import { useDropzone } from "react-dropzone";
+import { useState } from "react";
+import { motion } from "framer-motion";
+import "./App.css";
 
-const PreviewCard = ({ file, preview, result, status, error }) => (
-  <div className="bg-white shadow-lg rounded-lg overflow-hidden relative">
-    <img src={preview} alt={file.name} className="w-full h-48 object-contain" />
+function App() {
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [imagePreviews, setImagePreviews] = useState([]);
+  const [analysisResults, setAnalysisResults] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-    {status === "loading" && (
-      <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
-      </div>
-    )}
-
-    <div className="p-4">
-      <p className="text-sm text-gray-800 truncate">{file.name}</p>
-
-      {status === "done" && result && (
-        <>
-          <div className="flex items-center mt-2">
-            <div
-              className="w-8 h-8 rounded-full mr-3 border-2 border-gray-200"
-              style={{ backgroundColor: result.dominant_color_hex }}
-            ></div>
-            <div>
-              <p className="text-sm text-gray-600">
-                Dominant: {result.dominant_color_hex}
-              </p>
-              <p className="text-sm text-gray-600">
-                Closest Match: {result.closest_color} ({result.match_percentage})
-              </p>
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 mt-2">{result.message}</p>
-
-          <div className="mt-3">
-            <span
-              className={`inline-block px-3 py-1 text-xs font-semibold rounded-full ${
-                result.from_cache
-                  ? "bg-green-100 text-green-700 border border-green-300"
-                  : "bg-blue-100 text-blue-700 border border-blue-300"
-              }`}
-            >
-              {result.from_cache ? "From Cache" : "New Analysis"}
-            </span>
-          </div>
-        </>
-      )}
-
-      {status === "error" && error && (
-        <p className="text-xs text-red-500 mt-2">Error: {error}</p>
-      )}
-    </div>
-  </div>
-);
-
-const App = () => {
-  const [files, setFiles] = useState([]);
-
-  const onDrop = useCallback((acceptedFiles) => {
-    const imageFiles = acceptedFiles.filter((file) =>
-      file.type.startsWith("image/")
-    );
-    const invalidFiles = acceptedFiles.filter(
-      (file) => !file.type.startsWith("image/")
-    );
-
-    if (invalidFiles.length > 0) {
-      alert("Only image files are allowed!");
+  const handleFileChange = (event) => {
+    const files = Array.from(event.target.files);
+    if (files.length > 3) {
+      setError("You can only select up to 3 images.");
+      return;
     }
+    setSelectedFiles(files);
+    const previewUrls = files.map((file) => URL.createObjectURL(file));
+    setImagePreviews(previewUrls);
+    setError(null);
+  };
 
-    setFiles(
-      imageFiles.map((file) => ({
-        file,
-        preview: URL.createObjectURL(file),
-        status: "pending",
-        result: null,
-        error: null,
-      }))
-    );
-  }, []);
-
-  const handleAnalyze = async () => {
-    if (files.length === 0) return;
-
-    const validFiles = files.filter((f) => f.file.type.startsWith("image/"));
-    if (validFiles.length === 0) {
-      alert("No valid image files to analyze.");
+  const handleAnalyzeClick = async () => {
+    if (selectedFiles.length === 0) {
+      setError("Please select one or more files first.");
       return;
     }
 
-    setFiles((files) => files.map((f) => ({ ...f, status: "loading" })));
+    setLoading(true);
+    setError(null);
+    setAnalysisResults([]);
 
-    for (let i = 0; i < validFiles.length; i++) {
-      const formData = new FormData();
-      formData.append("images", validFiles[i].file);
+    const formData = new FormData();
+    selectedFiles.forEach((file) => {
+      formData.append("images", file);
+    });
 
-      try {
-        const response = await axios.post(
-          "https://hair-color-analyzer-backend.onrender.com/analyze-color",
-          formData
-        );
-        // const response = await axios.post(
-        //   "http://localhost:8000/analyze-color",
-        //   formData
-        // );
-        setFiles((files) =>
-          files.map((f, index) =>
-            index === i
-              ? { ...f, status: "done", result: response.data.results[0] }
-              : f
-          )
-        );
-      } catch (err) {
-        const errorMsg = err.response
-          ? err.response.data.detail
-          : "An unknown error occurred";
-        setFiles((files) =>
-          files.map((f, index) =>
-            index === i ? { ...f, status: "error", error: errorMsg } : f
-          )
-        );
+    try {
+      const response = await fetch("http://localhost:8000/analyze-hair-color", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || "Something went wrong");
       }
+
+      const data = await response.json();
+      setAnalysisResults(data);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleClear = () => {
-    files.forEach((file) => URL.revokeObjectURL(file.preview));
-    setFiles([]);
-  };
-
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: {
-      "image/*": [],
-    },
-  });
-
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col items-center py-10">
-      <div className="w-full max-w-4xl px-4">
-        <header className="text-center mb-10">
-          <h1 className="text-4xl font-bold text-gray-800">
-            AI Color Analyzer
-          </h1>
-          <p className="text-lg text-gray-600 mt-2">
-            Upload an image to detect its dominant color.
-          </p>
-        </header>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex flex-col items-center justify-center p-6">
+      <motion.header
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="text-center mb-8"
+      >
+        <h1 className="text-4xl md:text-5xl font-bold text-gray-800 dark:text-white drop-shadow-lg">
+          Hair Color Analyzer 🎨
+        </h1>
+        <p className="text-gray-500 dark:text-gray-400 mt-2">
+          Upload up to 3 images to analyze dominant hair colors
+        </p>
+      </motion.header>
 
-        <div
-          {...getRootProps()}
-          className={`border-4 border-dashed rounded-xl p-10 text-center cursor-pointer transition-colors ${
-            isDragActive
-              ? "border-blue-500 bg-blue-50"
-              : "border-gray-300 bg-white"
-          }`}
-        >
-          <input {...getInputProps()} />
-          {isDragActive ? (
-            <p className="text-blue-600">Drop the files here ...</p>
-          ) : (
-            <p className="text-gray-500">
-              Drag 'n' drop some files here, or click to select files
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="w-full max-w-2xl bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl border border-gray-200 dark:border-gray-700 rounded-3xl shadow-xl p-8 transition-all"
+      >
+        {/* File Input */}
+        <div className="flex flex-col items-center gap-4">
+          <input
+            type="file"
+            onChange={handleFileChange}
+            accept="image/*"
+            multiple
+            className="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer"
+          />
+
+          {/* Image Previews */}
+          <div className="flex flex-wrap justify-center gap-4 mt-4">
+            {imagePreviews.map((preview, index) => (
+              <motion.img
+                key={index}
+                src={preview}
+                alt={`Selected preview ${index + 1}`}
+                className="w-32 h-32 object-cover rounded-2xl shadow-md border border-gray-300 dark:border-gray-700 hover:scale-105 transition-transform"
+                whileHover={{ scale: 1.05 }}
+              />
+            ))}
+          </div>
+
+          <button
+            onClick={handleAnalyzeClick}
+            disabled={loading}
+            className={`mt-6 px-6 py-3 rounded-2xl font-semibold text-white shadow-md transition-all ${
+              loading
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-purple-600 hover:to-pink-500"
+            }`}
+          >
+            {loading ? "Analyzing..." : "Analyze Hair Color"}
+          </button>
+
+          {error && (
+            <p className="text-red-500 font-medium mt-4 bg-red-100 dark:bg-red-900/40 px-4 py-2 rounded-xl">
+              ⚠️ {error}
             </p>
           )}
         </div>
+      </motion.div>
 
-        {files.length > 0 && (
-          <div className="mt-10">
-            <h2 className="text-2xl font-semibold text-gray-800 mb-4">
-              Selected Images
-            </h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {files.map((file, index) => (
-                <PreviewCard key={index} {...file} />
-              ))}
-            </div>
-            <div className="mt-6 flex justify-center space-x-4">
-              <button
-                onClick={handleAnalyze}
-                disabled={files.some((f) => f.status === "loading")}
-                className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg transition-colors disabled:bg-gray-400"
+      {/* Results */}
+      {analysisResults.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mt-10 w-full max-w-4xl"
+        >
+          <h2 className="text-3xl font-bold text-gray-800 dark:text-white text-center mb-6">
+            Analysis Results
+          </h2>
+          <div className="grid md:grid-cols-2 gap-8">
+            {analysisResults.map((result, index) => (
+              <motion.div
+                key={index}
+                whileHover={{ y: -5 }}
+                className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white/70 dark:bg-gray-800/70 shadow-lg p-6 flex flex-col md:flex-row gap-4"
               >
-                {files.some((f) => f.status === "loading")
-                  ? "Analyzing..."
-                  : "Analyze Images"}
-              </button>
-              <button
-                onClick={handleClear}
-                className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition-colors"
-              >
-                Clear
-              </button>
-            </div>
+                <img
+                  src={imagePreviews[index]}
+                  alt={result.filename}
+                  className="w-40 h-40 object-cover rounded-xl border border-gray-300 dark:border-gray-700 shadow-md"
+                />
+                <div className="flex-1">
+                  <h4 className="font-semibold text-lg text-gray-800 dark:text-gray-100">
+                    {result.filename}
+                  </h4>
+                  {result.error ? (
+                    <p className="text-red-500 mt-2">Error: {result.error}</p>
+                  ) : (
+                    <>
+                      {/* Dominant Hair Colors */}
+                      <div className="mt-4">
+                        <h3 className="font-semibold text-gray-700 dark:text-gray-300">
+                          Dominant Hair Colors
+                        </h3>
+                        <div className="flex flex-wrap gap-3 mt-2">
+                          {result.dominant_hair_colors.map((color, i) => (
+                            <div
+                              key={i}
+                              className="flex items-center gap-2"
+                            >
+                              <div
+                                className="w-6 h-6 rounded-full border border-gray-400"
+                                style={{ backgroundColor: color }}
+                              ></div>
+                              <span className="text-sm text-gray-600 dark:text-gray-400">
+                                {color}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Top Matching Color Sets */}
+                      <div className="mt-4">
+                        <h3 className="font-semibold text-gray-700 dark:text-gray-300">
+                          Top Matching Color Sets
+                        </h3>
+                        {result.closest_hair_color_sets.map((set, i) => (
+                          <div key={i} className="mt-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              <strong>Set Name:</strong> {set.set_name}
+                            </p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              <strong>Similarity:</strong> {set.similarity_percentage}
+                            </p>
+                            <div className="flex flex-wrap gap-3 mt-2">
+                              {set.matched_colors.map((color, j) => (
+                                <div key={j} className="flex items-center gap-2">
+                                  <div
+                                    className="w-6 h-6 rounded-full border border-gray-400"
+                                    style={{ backgroundColor: color }}
+                                  ></div>
+                                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                                    {color}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </motion.div>
+            ))}
           </div>
-        )}
-      </div>
+        </motion.div>
+      )}
     </div>
   );
-};
+}
 
 export default App;
