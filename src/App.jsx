@@ -7,7 +7,6 @@ import Analysis from "./components/Analysis";
 import ColorManager from "./components/ColorManager";
 import ColorDetail from "./components/ColorDetail";
 import TrainingWizard from "./components/TrainingWizard";
-import CacheManager from "./components/CacheManager";
 
 function App() {
   const [loading, setLoading] = useState(false);
@@ -45,7 +44,6 @@ function App() {
     return (
       <div className="w-full space-y-8">
         <Analysis setLoading={setLoading} loading={loading} />
-        <CacheManager />
       </div>
     );
   };

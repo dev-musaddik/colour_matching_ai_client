@@ -295,25 +295,3 @@ export const getTrainingImagesForColor = async (colorId) => {
   return handleResponse(response);
 };
 
-/**
- * Clears all cached analysis results
- * @returns {Promise<Object>} - Success message
- */
-export const clearCache = async () => {
-  console.log("Clearing analysis cache...");
-
-  const response = await fetch(`${API_BASE_URL}/clear-cache`, {
-    method: "POST",
-  });
-
-  return handleResponse(response);
-};
-
-/**
- * Gets cache statistics
- * @returns {Promise<Object>} - Cache stats
- */
-export const getCacheStats = async () => {
-  const response = await fetch(`${API_BASE_URL}/cache/stats`);
-  return handleResponse(response);
-};
