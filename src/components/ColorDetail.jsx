@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { getTrainingImagesForColor, uploadTrainingImage, triggerTraining } from '../services/api';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE || "http://localhost:8000";
+const API_BASE_URL = import.meta.env.VITE_API_BASE || "https://colour-matching-ai-sarver-1.onrender.com";
 
 const ColorDetail = ({ color, onBack, setLoading }) => {
     const [images, setImages] = useState([]);
