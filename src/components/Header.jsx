@@ -10,13 +10,20 @@ const Header = ({ view, setView, darkMode, toggleDarkMode }) => {
 
     return (
         <header className="w-full flex flex-col md:flex-row justify-between items-start mb-16">
-            <div className="mb-8 md:mb-0">
-                <h1 className="text-4xl md:text-6xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-violet-500 dark:from-indigo-400 dark:to-purple-400 pb-2">
-                    Gl Hair AI Agent
-                </h1>
-                <p className="text-gray-500 dark:text-gray-400 mt-2 text-lg font-medium">
-                    Professional Pigment & Style Analysis
-                </p>
+            <div className="mb-8 md:mb-0 flex items-center gap-4">
+                <img
+                    src="/GL Colour Matching AI Agent logo.png"
+                    alt="GL Logo"
+                    className="w-12 h-12 object-contain"
+                />
+                <div>
+                    <h1 className="text-4xl md:text-6xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-violet-500 dark:from-indigo-400 dark:to-purple-400 pb-2">
+                        GL Hair Color Analyzer
+                    </h1>
+                    <p className="text-gray-500 dark:text-gray-400 mt-2 text-lg font-medium">
+                        Professional Pigment & Style Analysis
+                    </p>
+                </div>
             </div>
             <div className="flex items-center gap-4">
                 <nav className="flex items-center p-1 bg-gray-100 dark:bg-gray-800 rounded-xl">
