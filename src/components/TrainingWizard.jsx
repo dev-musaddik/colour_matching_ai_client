@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import ColorSuggestionInput from "./ColorSuggestionInput"; // Make sure path is correct
-import { createColorAndTrain } from "../services/api"; // Your API function
+import ColorSuggestionInput from "./ColorSuggestionInput";
+import { createColorAndTrain } from "../services/api";
 
 const TrainingWizard = ({ onComplete, onCancel, setLoading }) => {
   const [files, setFiles] = useState([]);
@@ -13,17 +13,63 @@ const TrainingWizard = ({ onComplete, onCancel, setLoading }) => {
   const [trainingMessage, setTrainingMessage] = useState("");
   const [isTraining, setIsTraining] = useState(false);
 
-  const processFiles = (newFiles) => {
-    if (newFiles.length === 0) return;
-    const allFiles = [...files, ...Array.from(newFiles)].slice(0, 5); // Max 5 images
-    setFiles(allFiles);
+  // --- Resize & compress images safely ---
+  const resizeImage = (file, maxDim = 1024, minQuality = 0.7) => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      const canvas = document.createElement("canvas");
+      const reader = new FileReader();
+
+      reader.onload = (e) => {
+        img.src = e.target.result;
+      };
+
+      img.onload = () => {
+        let { width, height } = img;
+        const scale = Math.min(maxDim / width, maxDim / height, 1); // never upscale
+        width = Math.floor(width * scale);
+        height = Math.floor(height * scale);
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob(
+          (blob) => {
+            if (blob.size < 50 * 1024) {
+              // too small? keep original file to preserve quality
+              resolve(file);
+            } else {
+              resolve(new File([blob], file.name, { type: "image/jpeg" }));
+            }
+          },
+          "image/jpeg",
+          minQuality
+        );
+      };
+
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const processFiles = async (newFiles) => {
+    if (!newFiles || newFiles.length === 0) return;
+
+    const filesArray = Array.from(newFiles).slice(0, 5);
+    const resizedFiles = await Promise.all(
+      filesArray.map((f) => resizeImage(f))
+    );
+
+    setFiles(resizedFiles);
 
     previews.forEach(URL.revokeObjectURL);
-    const newPreviews = allFiles.map((f) => URL.createObjectURL(f));
+    const newPreviews = resizedFiles.map((f) => URL.createObjectURL(f));
     setPreviews(newPreviews);
   };
 
   const handleFileChange = (e) => processFiles(e.target.files);
+
   const handleDragOver = useCallback((e) => {
     e.preventDefault();
     setIsDragging(true);
@@ -32,14 +78,11 @@ const TrainingWizard = ({ onComplete, onCancel, setLoading }) => {
     e.preventDefault();
     setIsDragging(false);
   }, []);
-  const handleDrop = useCallback(
-    (e) => {
-      e.preventDefault();
-      setIsDragging(false);
-      processFiles(e.dataTransfer.files);
-    },
-    [files]
-  );
+  const handleDrop = useCallback((e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    processFiles(e.dataTransfer.files);
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -57,20 +100,15 @@ const TrainingWizard = ({ onComplete, onCancel, setLoading }) => {
     setError("");
     setTrainingProgress(0);
     setTrainingMessage("Starting training...");
-    
+
     try {
-      console.log(colorName, files);
-      await createColorAndTrain(colorName, files, (percentage, message, status) => {
+      await createColorAndTrain(colorName, files, (percentage, message) => {
         setTrainingProgress(percentage);
         setTrainingMessage(message);
       });
-      
       setTrainingMessage("Training complete!");
       setTrainingProgress(100);
-      
-      setTimeout(() => {
-        onComplete();
-      }, 1500);
+      setTimeout(() => onComplete(), 1500);
     } catch (err) {
       setError(err.message);
       setIsTraining(false);
@@ -105,7 +143,6 @@ const TrainingWizard = ({ onComplete, onCancel, setLoading }) => {
           </div>
         )}
 
-        {/* Progress Bar */}
         {isTraining && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
@@ -132,7 +169,6 @@ const TrainingWizard = ({ onComplete, onCancel, setLoading }) => {
         )}
 
         <form onSubmit={handleSubmit}>
-          {/* Step 1: Upload */}
           <div
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
@@ -172,7 +208,6 @@ const TrainingWizard = ({ onComplete, onCancel, setLoading }) => {
             )}
           </AnimatePresence>
 
-          {/* Step 2: Name (Permanent, Non-editable) */}
           {files.length > 0 && (
             <motion.div
               initial={{ opacity: 0 }}
@@ -182,14 +217,10 @@ const TrainingWizard = ({ onComplete, onCancel, setLoading }) => {
               <label className="font-bold text-lg mb-2 block">
                 Name this Color
               </label>
-              <ColorSuggestionInput
-                value={colorName}
-                onChange={setColorName}
-              />
+              <ColorSuggestionInput value={colorName} onChange={setColorName} />
             </motion.div>
           )}
 
-          {/* Step 3: Submit */}
           <div className="flex justify-end gap-4 mt-8">
             <button
               type="button"
