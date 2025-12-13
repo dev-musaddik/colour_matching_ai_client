@@ -3,7 +3,8 @@ import { motion } from 'framer-motion';
 import { getTrainingImagesForColor, uploadTrainingImage, triggerTraining } from '../services/api';
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE || "https://colour-matching-ai-sarver-1.onrender.com";
+//   import.meta.env.VITE_API_BASE || "https://colour-matching-ai-sarver-1.onrender.com";
+  import.meta.env.VITE_API_BASE || "http://127.0.0.1:8000";
 
 const ColorDetail = ({ color, onBack, setLoading }) => {
     const [images, setImages] = useState([]);
@@ -102,7 +103,7 @@ const ColorDetail = ({ color, onBack, setLoading }) => {
                     {images.map(img => (
                         <motion.div key={img.id} layout>
                             <img 
-                                src={`${API_BASE_URL}/${img.image_path}`} 
+                                src={`${API_BASE_URL}${img.image_path}`} 
                                 alt={`Training image ${img.id}`}
                                 className="w-full h-32 object-cover rounded-lg shadow-sm border border-gray-200 dark:border-gray-700"
                             />
