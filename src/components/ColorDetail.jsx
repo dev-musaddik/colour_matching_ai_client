@@ -3,8 +3,8 @@ import { motion } from 'framer-motion';
 import { getTrainingImagesForColor, uploadTrainingImage, triggerTraining } from '../services/api';
 
 const API_BASE_URL =
-//   import.meta.env.VITE_API_BASE || "https://colour-matching-ai-sarver-1.onrender.com";
-  import.meta.env.VITE_API_BASE || "http://127.0.0.1:8000";
+  import.meta.env.VITE_API_BASE || "https://colour-matching-ai-sarver-1.onrender.com";
+//   import.meta.env.VITE_API_BASE || "http://127.0.0.1:8000";
 
 const ColorDetail = ({ color, onBack, setLoading }) => {
     const [images, setImages] = useState([]);
