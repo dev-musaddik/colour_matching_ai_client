@@ -8,7 +8,8 @@ import {
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE ||
-  "https://colour-matching-ai-sarver-1.onrender.com";
+  "https://colour-matching-ai-sarver-wb7d.onrender.com";
+  // "https://colour-matching-ai-sarver-1.onrender.com";
 
 const ColorDetail = ({ color, onBack, setLoading }) => {
   const [images, setImages] = useState([]);
