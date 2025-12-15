@@ -38,7 +38,7 @@ const ColorManager = ({ setSelectedColor, setShowTrainingWizard }) => {
     };
 
     if (isLoading) {
-        return <div className="text-center p-10">Loading color library...</div>;
+        return <div className="text-center p-10">Loading colour library...</div>;
     }
 
     return (
@@ -50,7 +50,7 @@ const ColorManager = ({ setSelectedColor, setShowTrainingWizard }) => {
             {error && <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg">{error}</div>}
             
             <div className="flex justify-between items-center mb-8">
-                <h2 className="text-2xl font-bold">Color Library</h2>
+                <h2 className="text-2xl font-bold">Colour Library</h2>
                 <button 
                     onClick={() => setShowTrainingWizard(true)}
                     className="px-5 py-2 rounded-lg font-semibold text-white bg-indigo-600 hover:bg-indigo-500"
@@ -68,7 +68,7 @@ const ColorManager = ({ setSelectedColor, setShowTrainingWizard }) => {
                             animate={{ opacity: 1 }}
                             className="text-center p-10 bg-white dark:bg-gray-800/50 rounded-xl"
                         >
-                            <p className="font-semibold">Your color library is empty.</p>
+                            <p className="font-semibold">Your colour library is empty.</p>
                             <p className="text-gray-500 dark:text-gray-400">Click "Train New Color" to teach the AI a new hair color.</p>
                         </motion.div>
                     )}

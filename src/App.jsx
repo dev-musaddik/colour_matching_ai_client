@@ -267,7 +267,7 @@ function App() {
       </AnimatePresence>
 
       {/* Main Content Container */}
-      <div className="w-full max-w-6xl px-6 py-12 z-10 flex flex-col items-center">
+      <div className="w-full max-w-6xl px-6 py-12 pt-4 z-10 flex flex-col items-center">
         <Header
           view={view}
           setView={guardedSetView}
